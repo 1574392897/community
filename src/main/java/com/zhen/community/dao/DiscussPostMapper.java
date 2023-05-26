@@ -1,5 +1,6 @@
 package com.zhen.community.dao;
 
+import com.zhen.community.entity.Comment;
 import com.zhen.community.entity.DiscussPost;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -14,5 +15,10 @@ public interface DiscussPostMapper {
 
     int selectDiscussPostRows(@Param("userId") int userId);
 
+    int insertDiscussPost(DiscussPost discussPost);
+
+    DiscussPost selectDiscussPostById(int id);
+
+    int updateCommentCount(int id, int commentCount);
 
 }

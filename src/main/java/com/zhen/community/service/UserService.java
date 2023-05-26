@@ -1,4 +1,4 @@
-package com.zhen.community.Service;
+package com.zhen.community.service;
 
 import com.zhen.community.dao.LoginTicketMapper;
 import com.zhen.community.dao.UserMapper;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +35,7 @@ public class UserService implements CommunityConstant {
     private LoginTicketMapper loginTicketMapper;
 
     public User findUserById(int id){
+
         return userMapper.selectById(id);
     }
 
@@ -187,5 +187,16 @@ public class UserService implements CommunityConstant {
     public LoginTicket findLoginTicket(String ticket){
         return loginTicketMapper.selectByTicket(ticket);
     }
+
+    // 更新用户头像
+    public int updataHeaderUrl(int userId,String headerUrl){
+
+        return userMapper.updateHeader(userId,headerUrl);
+    }
+
+    public User findUserByName(String username){
+        return userMapper.selectByName(username);
+    }
+
 
 }

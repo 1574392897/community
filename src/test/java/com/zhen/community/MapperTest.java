@@ -1,11 +1,7 @@
 package com.zhen.community;
 
-import com.zhen.community.dao.DiscussPostMapper;
-import com.zhen.community.dao.LoginTicketMapper;
-import com.zhen.community.dao.UserMapper;
-import com.zhen.community.entity.DiscussPost;
-import com.zhen.community.entity.LoginTicket;
-import com.zhen.community.entity.User;
+import com.zhen.community.dao.*;
+import com.zhen.community.entity.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +19,18 @@ import java.util.List;
 public class MapperTest {
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private DiscussPostMapper discussPostMapper;
+
+    @Autowired
+    private CommentMapper commentMapper;
+
+    @Autowired
+    private LoginTicketMapper loginTicketMapper;
+
+    @Autowired
+    private MessageMapper messageMapper;
 
     @Test
     public void testSelectUser(){
@@ -58,12 +66,10 @@ public class MapperTest {
 
     }
 
-    @Autowired
-    private DiscussPostMapper discussPostMapper;
-
     @Test
     public void testSelectPost(){
         List<DiscussPost> discussPostList = discussPostMapper.selectDiscussPosts(0, 0, 10);
+        System.out.println("bb"+discussPostList);
         for(DiscussPost post: discussPostList){
             System.out.println(post);
         }
@@ -73,8 +79,7 @@ public class MapperTest {
 
     }
 
-    @Autowired
-    private LoginTicketMapper loginTicketMapper;
+
 
     @Test
     public void testInsertLoginTicket(){
@@ -95,6 +100,54 @@ public class MapperTest {
         loginTicketMapper.updateStatus("abc",1);
         loginTicket =loginTicketMapper.selectByTicket("abc");
         System.out.println(loginTicket);
+    }
+
+    @Test
+    public void testInsertDiscussPost(){
+        DiscussPost discussPost = new DiscussPost();
+        discussPost.setId(149);
+        discussPost.setTitle("测试");
+        discussPost.setContent("test");
+        discussPost.setCreateTime(new Date());
+        int rows = discussPostMapper.insertDiscussPost(discussPost);
+
+        System.out.println(rows);
+        System.out.println(discussPost.getId());
+    }
+
+    @Test
+    public void testSelectComment(){
+        List<Comment> comments = commentMapper.selectCommentsByEntity(1, 12, 0, 3);
+        //System.out.println("aa"+comments);
+        for(Comment post: comments){
+            System.out.println(post);
+        }
+
+        int rows = commentMapper.selectCountByEntity(1,12);
+        System.out.println(rows);
+
+    }
+
+    @Test
+    public void testSelectLetters(){
+        List<Message> list = messageMapper.selectConversataions(111,0,20);
+        for (Message message:list){
+            System.out.println(message);
+        }
+
+        int count = messageMapper.selectConversationCount(111);
+        System.out.println(count);
+
+        list = messageMapper.selectLetters("111_112",0,10);
+        for (Message message:list){
+            System.out.println(message);
+        }
+
+        count = messageMapper.selectLetterCount("111_112");
+        System.out.println(count);
+
+        count = messageMapper.selectLetterUnreadCount(131,"111_131");
+        System.out.println(count);
     }
 
 }
