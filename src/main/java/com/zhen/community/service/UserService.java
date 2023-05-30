@@ -7,17 +7,18 @@ import com.zhen.community.entity.User;
 import com.zhen.community.util.CommunityConstant;
 import com.zhen.community.util.CommunityUtil;
 import com.zhen.community.util.MailClient;
+import com.zhen.community.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserService implements CommunityConstant {
@@ -31,12 +32,19 @@ public class UserService implements CommunityConstant {
     @Autowired
     private TemplateEngine templateEngine;
 
+//    @Autowired
+//    private LoginTicketMapper loginTicketMapper;
+
     @Autowired
-    private LoginTicketMapper loginTicketMapper;
+    private RedisTemplate redisTemplate;
 
     public User findUserById(int id){
-
-        return userMapper.selectById(id);
+//        return userMapper.selectById(id);
+        User user = getCache(id);
+        if (user == null){
+            user = initCache(id);
+        }
+        return user;
     }
 
 
@@ -48,11 +56,11 @@ public class UserService implements CommunityConstant {
     */
     //声 明变量domain 接收 @Value 中的值
     // 获取的路径 域名
-    @Value("@{community.path.domain}")
+    @Value("${community.path.domain}")
     private String domain;
 
     // 获取的项目名
-    @Value("@{server.servlet.context-path}")
+    @Value("${server.servlet.context-path}")
     private String contextPath;
 
     public Map<String, Object> register(User user){
@@ -127,6 +135,7 @@ public class UserService implements CommunityConstant {
            return activation_repeat;
        }else if(user.getActivationCode().equals(code)){
            userMapper.updateStatus(userId,1);
+           clearCache(userId);
            return activation_sussess;
        }else {
            return activation_falluer;
@@ -162,7 +171,7 @@ public class UserService implements CommunityConstant {
         }
         // 验证状态
         if (user.getStatus() == 0){
-            map.put("statusMsq","该账号未激活");
+            map.put("statusMsq","该账号未激活，请在邮件中激活");
             return map;
         }
 
@@ -172,7 +181,10 @@ public class UserService implements CommunityConstant {
         loginTicket.setTicket(CommunityUtil.generateUUID());
         loginTicket.setStatus(0);
         loginTicket.setExpired(new Date(System.currentTimeMillis() + expiredSeconds * 1000));
-        loginTicketMapper.insertLoginTicket(loginTicket);
+//        loginTicketMapper.insertLoginTicket(loginTicket);
+
+        String redisKey = RedisKeyUtil.getKaptchaKey(loginTicket.getTicket());
+        redisTemplate.opsForValue().set(redisKey,loginTicket);
 
         map.put("ticket",loginTicket.getTicket());
 
@@ -181,22 +193,74 @@ public class UserService implements CommunityConstant {
 
     // 将凭证改为失效的状态
     public void logout(String ticket){
-        loginTicketMapper.updateStatus(ticket,1);
+//        loginTicketMapper.updateStatus(ticket,1);
+        String redisKey = RedisKeyUtil.getKaptchaKey(ticket);
+        LoginTicket loginTicket = (LoginTicket) redisTemplate.opsForValue().get(redisKey);
+        loginTicket.setStatus(1);
+        redisTemplate.opsForValue().set(redisKey,loginTicket);
     }
 
     public LoginTicket findLoginTicket(String ticket){
-        return loginTicketMapper.selectByTicket(ticket);
+//        return loginTicketMapper.selectByTicket(ticket);
+        String redisKey = RedisKeyUtil.getKaptchaKey(ticket);
+        return (LoginTicket) redisTemplate.opsForValue().get(redisKey);
     }
 
     // 更新用户头像
-    public int updataHeaderUrl(int userId,String headerUrl){
-
-        return userMapper.updateHeader(userId,headerUrl);
+    public int updateHeader(int userId,String headerUrl){
+//        return userMapper.updateHeader(userId,headerUrl);
+        int rows = userMapper.updateHeader(userId, headerUrl);
+        clearCache(userId);
+        return rows;
     }
 
     public User findUserByName(String username){
+
         return userMapper.selectByName(username);
     }
 
+    //1.优先从缓存中取值
+    public User getCache(int userId) {
+        String userKey = RedisKeyUtil.getUserKey(userId);
+        return (User) redisTemplate.opsForValue().get(userKey);
+    }
+
+    //2.缓存取不到，从数据库中查，再存入缓存(初始化缓存)
+    public User initCache(int userId) {
+        User user = userMapper.selectById(userId);
+        String userKey = RedisKeyUtil.getUserKey(userId);
+        //过期时间1h，3600s
+        redisTemplate.opsForValue().set(userKey, user, 3600, TimeUnit.SECONDS);
+        return user;
+    }
+
+    //3.更新用户信息，清除缓存数据
+    public void clearCache(int userId) {
+        String userKey = RedisKeyUtil.getUserKey(userId);
+        redisTemplate.delete(userKey);
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities(int userId) {
+        User user = this.findUserById(userId);
+//        System.out.println("输出user"+user);
+//        System.out.println("输出userType:"+user.getType());
+
+        List<GrantedAuthority> list = new ArrayList<>();
+        list.add(new GrantedAuthority() {
+
+            @Override
+            public String getAuthority() {
+                switch (user.getType()) {
+                    case 1:
+                        return AUTHORITY_ADMIN;
+                    case 2:
+                        return AUTHORITY_MODERATOR;
+                    default:
+                        return AUTHORITY_USER;
+                }
+            }
+        });
+        return list;
+    }
 
 }

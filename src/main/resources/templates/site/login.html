@@ -115,8 +115,10 @@
 							<button type="submit" class="btn btn-info text-white form-control">立即登录</button>
 						</div>
 					</div>
-                    <p style="color:red" align="center" th:text="${statusMsq}" ></p>
-				</form>				
+					<i th:class="| ${statusMsq!=null?'is-invalid':''}|">
+					</i>
+                    <p style="color:red" align="center" th:text="${statusMsq}" >该账号未激活，请在邮件中激活</p>
+				</form>
 			</div>
 		</div>
 
