@@ -9,6 +9,7 @@
 <!--	<meta name="_csrf_header" th:content="${_csrf.headerName}">-->
 
 	<link rel="icon" href="https://static.nowcoder.com/images/logo_87_87.png"/>
+	<link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.css" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" th:href="@{/css/global.css}"/>
 	<link rel="stylesheet" type="text/css" th:href="@{/css/bootstrap.min.css}"/>
 	<title>九州论坛-首页</title>
@@ -160,7 +161,7 @@
 						<li th:class="|page-item ${page.current == 1 ? 'disabled' : ''}|">
 							<a class="page-link" th:href="@{${page.path}(current=${page.current - 1 })}">上一页</a></li>
 						<li th:class="|page-item ${i == page.current ? 'active' : ''}|" th:each="i:${#numbers.sequence(page.from,page.to)}">
-							<a class="page-link" href="#" th:text="${i}">1</a>
+							<a class="page-link" th:href="@{${page.path}(current=${i})}" th:text="${i}">1</a>
 						</li>
 						<li th:class="|page-item ${page.current == page.total ? 'disabled' : ''}|">
 							<a class="page-link" th:href="@{${page.path}(current=${page.current + 1 })}">下一页</a>
@@ -238,9 +239,9 @@
 
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" crossorigin="anonymous"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
 	<script type="text/javascript" th:src="@{/js/index.js}"></script>
 	<script type="text/javascript" th:src="@{/js/global.js}"></script>
-	<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
-	<script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
+
 </body>
 </html>
